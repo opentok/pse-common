@@ -1,0 +1,16 @@
+{
+  "name": "pse-common",
+  "homepage": "https://github.com/opentok/pse-common",
+  "authors": [
+    "PSE Team"
+  ],
+  "description": "Common libraries PSE",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "bower.json",
+    ".gitignore",
+    "README.md"
+  ],
+  "private": true
+}

@@ -1,0 +1,35 @@
+.card {
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  display: inline-block;
+  text-align: center;
+
+  transition: transform .2s ease-in;
+}
+
+.card[data-position='top'] {
+  transform: translate(0, -100%);
+  overflow: hidden;
+}
+
+.card[data-position='down'] {
+  transform: translate(0, 100%);
+  overflow: hidden;
+}
+
+.card[data-position='right'] {
+  transform: translate(100%, 0);
+  overflow: hidden;
+}
+
+.card[data-position='left'] {
+  transform: translate(-100%, 0);
+  overflow: hidden;
+}
+
+.card[data-position='home'] {
+  transform: translate(0, 0);
+}
