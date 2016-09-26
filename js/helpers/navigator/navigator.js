@@ -27,7 +27,7 @@
    *
    */
   function toggle(view, pos) {
-    view.dataset.position = oppositePosition[pos];
+    view.data('position', oppositePosition[pos]);
   }
 
   var Handler = function(container) {
@@ -39,10 +39,10 @@
       var child = childNodes[count];
       if (child.classList && child.classList.contains('card')) {
         cards[child.id] = child;
-        if (child.dataset.position === position.HOME) {
+        if (child.data('position') === position.HOME) {
           currentCard = child;
           history.push(currentCard);
-          document.body.dataset.currentCard = child.id;
+          document.body.data('currentCard', child.id);
         }
       }
     }
@@ -82,11 +82,11 @@
 
         var goCard = cards[id];
         if (goCard) {
-          toggle(currentCard, goCard.dataset.position);
+          toggle(currentCard, goCard.data('position');
           currentCard = goCard;
           history.push(currentCard);
-          document.body.dataset.currentCard = id;
-          currentCard.dataset.position = position.HOME;
+          document.body.data('currentCard', id);
+          currentCard.data('position', position.HOME);
         }
       },
 
@@ -101,8 +101,8 @@
 
         currentCard = history[count - 2];
         var lastCard = history.pop();
-        toggle(lastCard, currentCard.dataset.position);
-        currentCard.dataset.position =  position.HOME;
+        toggle(lastCard, currentCard.data('position'));
+        currentCard.data('position', position.HOME);
         return true;
       },
 
