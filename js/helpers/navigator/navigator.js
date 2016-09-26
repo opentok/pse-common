@@ -82,7 +82,7 @@
 
         var goCard = cards[id];
         if (goCard) {
-          toggle(currentCard, goCard.data('position');
+          toggle(currentCard, goCard.data('position'));
           currentCard = goCard;
           history.push(currentCard);
           document.body.data('currentCard', id);
