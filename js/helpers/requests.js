@@ -8,6 +8,7 @@
 
   function sendXHR(aType, aURL, aData, aDataType, aResponseType) {
     return new Promise(function(resolve, reject) {
+      aData = typeof aData === 'object' && JSON.stringify(aData) || aData;
       var xhr = new XMLHttpRequest();
       xhr.open(aType, aURL);
       xhr.responseType = aResponseType || 'json';
@@ -19,7 +20,7 @@
 
       xhr.onload = function (aEvt) {
         if (xhr.status === 200) {
-          var response = xhr.responseType === 'json' && xhr.response || xhr.responseText;
+          var response = xhr.responseType === 'json' && (xhr.response || {}) || xhr.responseText;
           if (xhr.responseType === 'json' && typeof xhr.response === 'string') {
             response = JSON.parse(response);
           }
