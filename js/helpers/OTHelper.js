@@ -434,6 +434,7 @@
             error ? reject(error) : resolve(subscriber);
           });
       }).then(function(subscriber) {
+        subscriber.restrictFrameRate(aProperties.restrictFrameRate);
         Object.keys(aHandlers).forEach(function(name) {
           subscriber.on(name, aHandlers[name].bind(self));
         });
