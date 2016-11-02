@@ -434,7 +434,11 @@
             error ? reject(error) : resolve(subscriber);
           });
       }).then(function(subscriber) {
-        subscriber.restrictFrameRate(aProperties.restrictFrameRate);
+        try {
+          subscriber.restrictFrameRate(aProperties.restrictFrameRate);
+        } catch (ex) {
+          logger.log('Failed calling restrictFrameRate', ex);
+        }
         Object.keys(aHandlers).forEach(function(name) {
           subscriber.on(name, aHandlers[name].bind(self));
         });
