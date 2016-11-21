@@ -27,8 +27,9 @@ var LazyLoader = (function() {
       // required.
       script.async = false;
       script.addEventListener('load', callback);
-      document.head.appendChild(script);
+      script.addEventListener('error', callback);
       this._isLoading[file] = script;
+      document.head.appendChild(script);
     },
 
     _css: function(file, callback) {
