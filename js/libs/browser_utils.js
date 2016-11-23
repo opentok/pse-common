@@ -176,21 +176,33 @@
   }
 
   // A simple countdown timer...
-  function CountdownTimer(startValue) {
-    var timeLeft = startValue;
+  // updateTime: How many milliseconds between updates
+  // timerFn: Function to modify the current value called after every updateTime. It
+  //   will receive an object of the { time: aTime } form. It should return true if
+  //   the timer should continue or false it it should stop, and it can modify the time value.
+  // startValue: Initial timer value
+  function Timer(updateTime, timerFn, startValue) {
+    var currentTime = {
+      time: startValue
+    };
+
     var paused = false;
-    var interval;
+    var intervalId;
     var intervalFn = function(cb) {
-      !paused && cb(--timeLeft);
-      if (timeLeft <=0) {
-        exports.clearInterval(interval);
+      if (paused) {
+        return;
+      }
+      var shouldFinish = !timerFn(currentTime);
+      cb(currentTime.time);
+      if (shouldFinish) {
+        exports.clearInterval(intervalId);
       }
     };
 
     return  {
       start: function(callback) {
-        if (!interval) {
-          interval = exports.setInterval(intervalFn.bind(this, callback), 1000);
+        if (!intervalId) {
+          intervalId = exports.setInterval(intervalFn.bind(this, callback), updateTime);
         }
       },
       pause: function() {
@@ -199,18 +211,22 @@
       resume: function() {
         paused = false;
       },
-      get timeLeft() {
-        return timeLeft;
+      get currentTime() {
+        return currentTime.time;
       },
       stop: function() {
-        if (interval) {
-          exports.clearInterval(interval);
-          interval = undefined;
+        if (intervalId) {
+          exports.clearInterval(intervalId);
+          intervalId = undefined;
         }
       }
 
     };
   }
+
+  var DefaultTimer = Timer.bind(undefined, 1000, function(aCurrentTime) {
+    return --aCurrentTime.time > 0;
+  });
 
   var _parentValidOrigins = [];
 
@@ -234,7 +250,8 @@
   var Utils = {
     setParentValidOrigins: setParentValidOrigins,
     sendToParent: sendToParent,
-    CountdownTimer: CountdownTimer,
+    DefaultTimer: DefaultTimer,
+    Timer: Timer,
     getCurrentTime: getCurrentTime,
     inspectObject: inspectObject,
     sendEvent: sendEvent,
