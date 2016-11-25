@@ -214,6 +214,9 @@
       get currentTime() {
         return currentTime.time;
       },
+      set currentTime(time) {
+        currentTime.time = time;
+      },
       stop: function() {
         if (intervalId) {
           exports.clearInterval(intervalId);
@@ -247,6 +250,27 @@
     }
   }
 
+  function isOriginValid(origin) {
+    return _parentValidOrigins.concat(document.location.origin).find(function(parentValidOrigin) {
+      return parentValidOrigin === origin;
+    });
+  }
+
+  function addMessagesHandlers(handlers) {
+    exports.addEventListener('message', function onMessage(event) {
+      console.log('Message received from:', event);
+      var origin = event.origin || event.originalEvent.origin;
+      if (isOriginValid(origin)) {
+        // Messages from the inner window will have a type and some other data
+        event = event.data;
+        var handler = handlers[event.type];
+        typeof handler === 'function' && handler(event);
+      } else {
+        console.warn('Security: ignoring message from:', origin);
+      }
+    });
+  }
+
   var Utils = {
     setParentValidOrigins: setParentValidOrigins,
     sendToParent: sendToParent,
@@ -255,6 +279,7 @@
     getCurrentTime: getCurrentTime,
     inspectObject: inspectObject,
     sendEvent: sendEvent,
+    addMessagesHandlers: addMessagesHandlers,
     addEventsHandlers: addEventsHandlers,
     addHandlers: addHandlers,
     get draggableUI() {
