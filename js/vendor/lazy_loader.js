@@ -87,7 +87,7 @@ var LazyLoader = (function() {
             resolve(xhr.response);
           } else {
             reject(new Error('No valid JSON object was found (' +
-			     xhr.status + ' ' + xhr.statusText + ')'));
+                            xhr.status + ' ' + xhr.statusText + ')'));
           }
         };
 
@@ -127,7 +127,7 @@ var LazyLoader = (function() {
           self._loaded[file] = true;
 
           if (--loadsRemaining === 0) {
-              resolve();
+            resolve();
           }
         }
 
@@ -149,7 +149,12 @@ var LazyLoader = (function() {
               idx = file.id;
             }
 
-            this['_' + method](file, perFileCallback.bind(null, idx));
+            var methodName = '_' + method;
+            if (typeof this[methodName] === 'function') {
+              this[methodName](file, perFileCallback.bind(null, idx));
+            } else {
+              perFileCallback(idx);
+            }
           }
         }
       }.bind(self));
