@@ -235,7 +235,9 @@
 
   function setParentValidOrigins(aAuthOrigins) {
     _parentValidOrigins =
-      aAuthOrigins && typeof aAuthOrigins === 'string' && aAuthOrigins.split(',') || [];
+      Array.isArray(aAuthOrigins) && aAuthOrigins ||
+      typeof aAuthOrigins === 'string' && aAuthOrigins.split(',') ||
+      [];
   }
 
   function sendToParent(aType, aData) {
