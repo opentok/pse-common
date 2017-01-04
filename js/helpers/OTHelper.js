@@ -316,21 +316,24 @@
 
         _publisher = OT.initPublisher(aDOMElement, aProperties, function(error) {
           if (error) {
-            processError({ message: 'Error initializing publisher. ' + error.message });
-          } else {
-            _session.publish(_publisher, function(error) {
-              if (error) {
-                processError(error);
-              } else {
-                _publisherInitialized = true;
-                Object.keys(aHandlers).forEach(function(name) {
-                  _publisher.on(name, aHandlers[name].bind(self));
-                });
-                _solvePublisherPromise(_publisher);
-                resolve(_publisher);
-              }
+            processError({
+              name: error.name,
+              message: 'Error initializing publisher: ' + error.message
             });
+           return;
           }
+          _session.publish(_publisher, function(error) {
+            if (error) {
+              processError(error);
+            } else {
+              _publisherInitialized = true;
+              Object.keys(aHandlers).forEach(function(name) {
+                _publisher.on(name, aHandlers[name].bind(self));
+              });
+              _solvePublisherPromise(_publisher);
+              resolve(_publisher);
+            }
+          });
         });
       });
     }
@@ -388,6 +391,7 @@
 
     // TO-DO: Make this configurable
     const IMAGE_ASSETS = '/images/annotations/';
+    const TOOLBAR_BG_COLOR = '#1a99ce';
 
     function getAnnotation(aDomElement, aOptions) {
       aOptions = aOptions || {};
@@ -405,7 +409,10 @@
       if (!aAccPack) {
         return Promise.resolve();
       }
-      return aAccPack.start(_session, { imageAssets: IMAGE_ASSETS });
+      return aAccPack.start(_session, {
+        imageAssets: IMAGE_ASSETS,
+        backgroundColor: TOOLBAR_BG_COLOR
+      });
     }
 
     // aElement can be a publisher, a subscriber or a AnnotationPack
@@ -435,7 +442,8 @@
           });
       }).then(function(subscriber) {
         try {
-          subscriber.restrictFrameRate(aProperties.restrictFrameRate);
+          aProperties.restrictFrameRate &&
+            subscriber.restrictFrameRate(aProperties.restrictFrameRate);
         } catch (ex) {
           logger.log('Failed calling restrictFrameRate', ex);
         }
