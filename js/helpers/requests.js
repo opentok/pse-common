@@ -6,7 +6,7 @@
   var debug =
     new Utils.MultiLevelLogger('requests.js', Utils.MultiLevelLogger.DEFAULT_LEVELS.all);
 
-  function sendXHR(aType, aURL, aData, aDataType, aResponseType) {
+  function sendXHR(aType, aURL, aData, aDataType, aResponseType, aHeaders) {
     return new Promise(function(resolve, reject) {
       aData = typeof aData === 'object' && JSON.stringify(aData) || aData;
       var xhr = new XMLHttpRequest();
@@ -16,6 +16,12 @@
       if (aDataType) {
         // Note that this requires
         xhr.setRequestHeader('Content-Type', aDataType);
+      }
+
+      if (aHeaders && typeof aHeaders === 'object') {
+        Object.keys(aHeaders).forEach(function(header) {
+          xhr.setRequestHeader(header, aHeaders[header]);
+        });
       }
 
       xhr.onload = function (aEvt) {
@@ -55,9 +61,7 @@
     return composed.join('');
   }
 
-  var Request = {
-    sendXHR: sendXHR
-  };
+  exports.Request = exports.Request || {};
+  exports.Request.sendXHR = sendXHR;
 
-  exports.Request = Request;
 }(this);
