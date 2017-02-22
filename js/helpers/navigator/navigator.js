@@ -1,6 +1,10 @@
 !function(global) {
   'use strict';
 
+  var transEndEventName =
+    ('WebkitTransition' in document.documentElement.style) ?
+    'webkitTransitionEnd' : 'transitionend';
+
   var position = {
     LEFT: 'left',
     RIGHT: 'right',
@@ -76,18 +80,29 @@
        *
        */
       go: function(id) {
-        if (id === currentCard.id) {
-          return;
-        }
+        return new Promise(function(resolve, reject) {
+          if (id === currentCard.id) {
+            resolve();
+            return;
+          }
 
-        var goCard = cards[id];
-        if (goCard) {
-          toggle(currentCard, goCard.data('position'));
-          currentCard = goCard;
-          history.push(currentCard);
-          document.body.data('currentCard', id);
-          currentCard.data('position', position.HOME);
-        }
+          var goCard = cards[id];
+          if (goCard) {
+            goCard.addEventListener(transEndEventName, function onTransitionend() {
+              goCard.removeEventListener(transEndEventName, onTransitionend);
+              currentCard = goCard;
+              history.push(currentCard);
+              document.body.data('currentCard', id);
+              resolve();
+            });
+            toggle(currentCard, goCard.data('position'));
+            goCard.data('position', position.HOME);
+          } else {
+            reject({
+              message: 'Card does not exist'
+            });
+          }
+        });
       },
 
       /**
