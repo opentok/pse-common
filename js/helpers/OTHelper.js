@@ -579,7 +579,20 @@
         (aShow && (container.classList.remove('ots-hidden') || true)) ||
           container.classList.add('ots-hidden');
       },
-      setPreferredResolution: setPreferredResolution
+      setPreferredResolution: setPreferredResolution,
+      getDevices: function() {
+        return otLoaded.then(function() {
+          return new Promise(function(resolve, reject) {
+            OT.getDevices(function gotDevices(error, devices) {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(devices);
+              }
+            });
+          });
+        });
+      }
     };
   }
 
