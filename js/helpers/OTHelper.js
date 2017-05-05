@@ -356,6 +356,20 @@
         Promise.reject();
     }
 
+    function destroyPublisher() {
+      if (!_publisher) {
+        return;
+      } else {
+        _publisher.destroy();
+        _publisher = null;
+        _publisherPromise = new Promise(function(resolve, reject) {
+           _solvePublisherPromise = resolve;
+        });
+        _publisherInitialized = false;
+      }
+    }
+
+
     function togglePublisherProperty(aProperty, aValue) {
       publisherReady().then(function(aPublisher) {
         aPublisher['publish' + aProperty](aValue);
@@ -533,6 +547,7 @@
       connect: connect,
       off: off,
       publish: publish,
+      destroyPublisher: destroyPublisher,
       subscribe: subscribe,
       toggleSubscribersAudio: toggleSubscribersAudio,
       toggleSubscribersVideo: toggleSubscribersVideo,
