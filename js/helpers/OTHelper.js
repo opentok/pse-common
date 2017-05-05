@@ -314,7 +314,7 @@
           reject({ error: error, publisherPromise: _publisherPromise });
         }
 
-        _publisher = OT.initPublisher(aDOMElement, aProperties, function(error) {
+        _publisher = OT.initPublisher(aDOMElement, propCopy, function(error) {
           if (error) {
             processError({
               name: error.name,
@@ -368,7 +368,6 @@
         _publisherInitialized = false;
       }
     }
-
 
     function togglePublisherProperty(aProperty, aValue) {
       publisherReady().then(function(aPublisher) {
