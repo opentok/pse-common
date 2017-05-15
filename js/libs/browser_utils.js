@@ -309,7 +309,10 @@
     },
     setDisabled: setDisabled,
     getLabelText: getLabelText,
-    isIE: isIE
+    isIE: isIE,
+    getPathname: function() {
+      return document.location.pathname;
+    }
   };
 
   // Just replacing global.utils might not be safe... let's just expand it...
