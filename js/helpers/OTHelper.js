@@ -1,3 +1,4 @@
+/* globals LazyLoader, Utils, OT, AnnotationAccPack */
 !function(global) {
   'use strict';
 
@@ -120,7 +121,7 @@
             signalData.to = aTo;
           }
           messagesSent[segmentOrder] =
-            new Promise(function(resolveMessage, rejectMessage) {
+            new Promise(function(resolveMessage, rejectMessage) { /* jshint ignore: line */
               session.signal(signalData, function(error) {
                 (error && (rejectMessage(error) || true)) || resolveMessage();
               });
@@ -140,7 +141,12 @@
     //
     function parseMultiPartMsg(aEvt) {
       var dataParsed;
-      dataParsed = JSON.parse(aEvt.data);
+      try {
+        dataParsed = JSON.parse(aEvt.data);
+      } catch(e) { }
+      if (!aEvt.from || !dataParsed || !dataParsed._head) {
+        return null;
+      }
       return {
         connectionId: aEvt.from.connectionId,
         head: dataParsed._head,
@@ -148,11 +154,22 @@
       };
     }
 
+    var execAllFunctions = function(aPromise, aFunctions) {
+      aFunctions.forEach(function(aFc) {
+        aPromise.then(aFc);
+      });
+    };
+
     var receiveMultipartMsg = function(aFcClients, aEvt) {
       var parsedMsg = parseMultiPartMsg(aEvt);
+      var newPromise = null;
+
+      if (parsedMsg === null) { // This doesn't look like a multi party msg... Just pass it down
+        execAllFunctions(Promise.resolve(aEvt), aFcClients);
+        return;
+      }
 
       var connection = _msgPieces[parsedMsg.connectionId];
-      var newPromise = null;
       // First msg from a client
       if (!connection) {
         connection = {};
@@ -169,12 +186,10 @@
           promiseSolver: null
         };
         // Get a new solver
-        newPromise = new Promise(function (resolve, reject) {
+        newPromise = new Promise(function (resolve) {
           msg.promiseSolver = resolve;
         });
-        aFcClients.forEach(function(aFc) {
-          newPromise.then(aFc);
-        });
+        execAllFunctions(newPromise, aFcClients);
         connection[parsedMsg.head.id] = msg;
       }
       // This shouldn't be needed since we can only set one handler per signal
@@ -207,7 +222,7 @@
       var _handlers = {};
       Object.
         keys(aHandlers[i]).
-        forEach(function(evtName) {
+        forEach(function(evtName) { /* jshint ignore: line */
           var handler = aHandlers[i][evtName];
           if (evtName.startsWith(MSG_MULTIPART)) {
             _interceptedHandlers[evtName] = _interceptedHandlers[evtName] || [];
@@ -250,7 +265,7 @@
     // aHandlers is either an object with the handlers for each event type
     // or an array of objects
     function connect(aHandlers) {
-      var self = this;
+      var self = this; /* jshint ignore: line */
       var apiKey = _sessionInfo.apiKey;
       var sessionId = _sessionInfo.sessionId;
       var token = _sessionInfo.token;
@@ -281,7 +296,7 @@
           });
         });
       });
-    };
+    }
 
     function removeListener(evtName) {
       _session.off(evtName);
@@ -292,12 +307,12 @@
     // promise that will fulfill when/if the publish succeeds at some future time (because of a
     // retry).
     var _solvePublisherPromise;
-    var _publisherPromise = new Promise(function(resolve, reject) {
+    var _publisherPromise = new Promise(function(resolve) {
       _solvePublisherPromise = resolve;
     });
 
     function publish(aDOMElement, aProperties, aHandlers) {
-      var self = this;
+      var self = this; /* jshint ignore: line */
       _publishOptions = null;
       var propCopy = {};
       Object.keys(aProperties).forEach(function(aKey) {
@@ -362,7 +377,7 @@
       } else {
         _publisher.destroy();
         _publisher = null;
-        _publisherPromise = new Promise(function(resolve, reject) {
+        _publisherPromise = new Promise(function(resolve) {
            _solvePublisherPromise = resolve;
         });
         _publisherInitialized = false;
@@ -447,7 +462,7 @@
     }
 
     function subscribe(aStream, aTargetElement, aProperties, aHandlers, aEnableAnnotation) {
-      var self = this;
+      var self = this; /* jshint ignore: line */
       return new Promise(function(resolve, reject) {
         var subscriber =
           _session.subscribe(aStream, aTargetElement, aProperties, function(error) {
@@ -463,7 +478,7 @@
         Object.keys(aHandlers).forEach(function(name) {
           subscriber.on(name, aHandlers[name].bind(self));
         });
-        subscriber.on('destroyed', function(evt) {
+        subscriber.on('destroyed', function() {
           subscriber.off();
           endAnnotation(subscriber);
         });
@@ -475,7 +490,7 @@
                           document.querySelector('.opentok-stream-container'));
           return subscriber;
         });
-      });;
+      });
     }
 
     function stopShareScreen() {
@@ -486,7 +501,7 @@
     }
 
     function shareScreen(aDOMElement, aProperties, aHandlers, aEnableAnnotation) {
-      var self = this;
+      var self = this; /* jshint ignore: line */
       var screenShareCapability = getScreenShareCapability();
       if (!Array.isArray(aHandlers)) {
         aHandlers = [aHandlers];
