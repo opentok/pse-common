@@ -269,7 +269,7 @@
       var apiKey = _sessionInfo.apiKey;
       var sessionId = _sessionInfo.sessionId;
       var token = _sessionInfo.token;
-      if (!Array.isArray(aHandlers)) {
+      if (aHandlers && !Array.isArray(aHandlers)) {
         aHandlers = [aHandlers];
       }
       return otLoaded.then(function() {
