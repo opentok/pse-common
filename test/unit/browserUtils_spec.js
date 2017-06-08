@@ -4,6 +4,20 @@ var should = chai.should();
 
 describe('Utils', function() {
 
+  var realLazyLoader = null;
+
+  before(function() {
+    realLazyLoader = window.LazyLoader;
+    window.LazyLoader = {
+      dependencyLoad: function() { return Promise.resolve(); },
+      load: function() { return Promise.resolve(); }
+    };
+  });
+
+  after(function() {
+    window.LazyLoader = realLazyLoader;
+  });
+
   it('should exist', function() {
     expect(Utils).to.exist;
   });
@@ -53,6 +67,20 @@ describe('Utils', function() {
       });
 
       Utils.sendEvent(eventName, data, target);
+    });
+  });
+
+  describe('#getDraggable', function(){
+    it('should exist and be a function', function() {
+      expect(Utils.getDraggable).to.exist;
+      expect(Utils.getDraggable).to.be.a('function');
+    });
+
+    it('should return the Draggable object', function(done) {
+      Utils.getDraggable().then(function(obj) {
+        expect(obj).to.be.equal(Draggable);
+        done();
+      })
     });
   });
 
