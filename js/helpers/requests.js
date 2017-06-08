@@ -1,8 +1,6 @@
 !function(exports) {
   'use strict';
 
-  var server = window.location.origin;
-
   var debug =
     new Utils.MultiLevelLogger('requests.js', Utils.MultiLevelLogger.DEFAULT_LEVELS.all);
 
@@ -44,21 +42,6 @@
 
       xhr.send(aData);
     });
-  }
-
-  function composeDate(data) {
-    var composed = [];
-
-    Object.keys(data).forEach(function(key) {
-      composed.push(key);
-      composed.push('=');
-      composed.push(data[key]);
-      composed.push('&');
-    });
-
-    composed.length && composed.pop();
-
-    return composed.join('');
   }
 
   exports.Request = exports.Request || {};
