@@ -1,0 +1,11 @@
+# Dependency directories
+node_modules
+bower_components
+
+# test libraries that should be fetched by bower
+test/lib
+otrtc_*.pid
+resultsRest.txt
+
+# Coverage report files
+coverage/**
