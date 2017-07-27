@@ -141,7 +141,7 @@
   global.Navigator = {
     get: function(sel) {
       var element = typeof sel === 'string' ? document.querySelector(sel) : sel;
-      var instance = _instances.find(inst => inst.element === element);
+      var instance = _instances.find(function(inst) { return inst.element === element; });
       !instance && (instance =
         _instances[_instances.push({ element: element, handler: new Handler(element)}) - 1]);
       return instance.handler;
