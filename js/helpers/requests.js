@@ -1,6 +1,8 @@
 !function(exports) {
   'use strict';
 
+  var server = window.location.origin;
+
   var debug =
     new Utils.MultiLevelLogger('requests.js', Utils.MultiLevelLogger.DEFAULT_LEVELS.all);
 
@@ -24,8 +26,10 @@
 
       xhr.onload = function (aEvt) {
         if (xhr.status === 200) {
-          var response = xhr.responseType === 'json' && (xhr.response || {}) || xhr.responseText;
-          if (xhr.responseType === 'json' && typeof xhr.response === 'string') {
+          var responseType =
+           !xhr.responseType && typeof xhr.responseType === 'string' && 'json' || xhr.responseType;
+          var response = responseType === 'json' && (xhr.response || {}) || xhr.responseText;
+          if (responseType === 'json' && typeof xhr.response === 'string') {
             response = JSON.parse(response);
           }
           resolve(response);
@@ -42,6 +46,21 @@
 
       xhr.send(aData);
     });
+  }
+
+  function composeDate(data) {
+    var composed = [];
+
+    Object.keys(data).forEach(function(key) {
+      composed.push(key);
+      composed.push('=');
+      composed.push(data[key]);
+      composed.push('&');
+    });
+
+    composed.length && composed.pop();
+
+    return composed.join('');
   }
 
   exports.Request = exports.Request || {};
