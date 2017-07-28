@@ -3,6 +3,7 @@
 // between the cracks
 
 !function(global) {
+  'use strict';
   // String doesn't have startsWith
   if (!String.prototype.startsWith) {
     String.prototype.startsWith = function(substr) {
@@ -67,15 +68,15 @@
     global.URL.revokeObjectURL = global._ieURL.revokeObjectURL;
   }
 
-  if (!Array.prototype.find) {
-    Array.prototype.find = function(predicate) {
-      if (this === null) {
+  if (!Array.prototype.find || !Array.prototype.findIndex) {
+    var genericFind = function(array, predicate, onlyIndex) {
+      if (array === null) {
         throw new TypeError('Array.prototype.find called on null or undefined');
       }
       if (typeof predicate !== 'function') {
         throw new TypeError('predicate must be a function');
       }
-      var list = Object(this);
+      var list = Object(array);
       var length = list.length >>> 0;
       var thisArg = arguments[1];
       var value;
@@ -83,11 +84,22 @@
       for (var i = 0; i < length; i++) {
         value = list[i];
         if (predicate.call(thisArg, value, i, list)) {
-          return value;
+          return onlyIndex ? i : value;
         }
       }
-      return undefined;
+      return onlyIndex ? -1 : undefined;
     };
+      
+    if (!Array.prototype.find) {
+      Array.prototype.find = function(predicate) {
+        return genericFind(this, predicate, false);
+      };
+    }
+    if (!Array.prototype.findIndex) {
+      Array.prototype.findIndex = function(predicate) {
+        return genericFind(this, predicate, true);
+      };
+    }
   }
 
   if (!global.Intl) {
@@ -125,7 +137,7 @@
 
             return time.join('');
           }
-        }
+        };
       }
     };
   }
@@ -142,10 +154,11 @@
       WeakMap.prototype = {
         set: function(key, value) {
           var entry = key[this.name];
-          if (entry && entry[0] === key)
+          if (entry && entry[0] === key) {
             entry[1] = value;
-          else
+          } else {
             defineProperty(key, this.name, {value: [key, value], writable: true});
+          }
           return this;
         },
         get: function(key) {
@@ -155,14 +168,14 @@
         },
         delete: function(key) {
           var entry = key[this.name];
-          if (!entry) return false;
+          if (!entry) { return false; }
           var hasValue = entry[0] === key;
           entry[0] = entry[1] = undefined;
           return hasValue;
         },
         has: function(key) {
           var entry = key[this.name];
-          if (!entry) return false;
+          if (!entry) { return false; }
           return entry[0] === key;
         }
       };
