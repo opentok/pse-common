@@ -24,8 +24,11 @@ describe('ie_polyfills', function() {
       createObjectURL: function() {},
       revokeObjectURL: function() {},
     };
-    realFind = Array.prototype.find;
+    // Snake case used intentionally here!
+    Array.prototype.real_find = Array.prototype.find;
     Array.prototype.find = null;
+    Array.prototype.real_findIndex = Array.prototype.findIndex;
+    Array.prototype.findIndex = null;
     realIntl = window.Intl;
     window.Intl = null;
     realWeakMap = window.WeakMap;
@@ -40,7 +43,8 @@ describe('ie_polyfills', function() {
     String.prototype.endsWith = realEndsWith;
     window.CustomEvent = realCustomEvent;
     window.URL = realURL;
-    Array.prototype.find = realFind;
+    Array.prototype.find = Array.prototype.real_find;
+    Array.prototype.findIndex = Array.prototype.real_findIndex;
     window.Intl = realIntl;
     window.WeakMap = realWeakMap;
   });
@@ -151,76 +155,93 @@ describe('ie_polyfills', function() {
 
   });
 
-  describe('#Array.prototype.find', function() {
-    it('should be polyfilled', function() {
-      expect(Array.prototype.find).to.exist;
-      expect(Array.prototype.find).to.be.a('function');
-    });
+  describe('#Array.prototype changes', function() {
 
-    it('should find an object in an array by one of its properties', function() {
-      var cherriesObj = {
-        name: 'cherries',
-        quantity: 5
-      };
-
-      var inventory = [{
-        name: 'apples',
-        quantity: 2
-      }, {
-        name: 'bananas',
-        quantity: 0
-      },
-      cherriesObj];
-
-      var findCherries = function(fruit) {
-        return fruit.name === 'cherries';
-      };
-
-      expect(inventory.find(findCherries)).to.be.deep.equal(cherriesObj);
-
-    });
-
-    it('should find a prime number in an array', function() {
-      var isPrime = function(element, index, array) {
-        var start = 2;
-        while (start <= Math.sqrt(element)) {
-          if (element % start++ < 1) {
-            return false;
-          }
+    var isPrime = (element, index, array) => {
+      var start = 2;
+      while (start <= Math.sqrt(element)) {
+        if (element % start++ < 1) {
+          return false;
         }
-        return element > 1;
-      };
-
-      expect([4, 6, 8, 12].find(isPrime)).to.be.undefined;
-      expect([4, 5, 8, 12].find(isPrime)).to.be.equal(5);
-    });
-
-    it('should fail when predicate is not a function', function(done) {
-      try {
-        Array.prototype.find.apply([], null);
-      } catch(ex) {
-        expect(ex).to.exist;
-        done();
       }
-    });
+      return element > 1;
+    };
+    var testCases = [
+      {
+        description: 'search by properties',
+        input: [
+          {
+            name: 'apples',
+            quantity: 2
+          }, 
+          {
+            name: 'bananas',
+            quantity: 0
+          },
+          {
+          name: 'cherries',
+          quantity: 5
+          }
+        ],
+        predicate: fruit => fruit.name === 'cherries'
+      },
+      {
+        description: 'search by value, and not find it',
+        input: [4, 6, 8, 12],
+        predicate: isPrime
+      },
+      {
+        description: 'search by value, and find it',
+        input: [4, 6, 5, 8, 12],
+        predicate: isPrime
+      },
+    ];
 
-    it('should fail when called on null', function(done) {
-      try {
-        Array.prototype.find.apply(null, function() {});
-      } catch(ex) {
-        expect(ex).to.exist;
-        done();
-      }
-    });
+    var methods = ['find', 'findIndex'];
 
-    it('should fail when called on undefined', function(done) {
-      try {
-        Array.prototype.find.apply(undefined, function() {});
-      } catch(ex) {
-        expect(ex).to.exist;
-        done();
-      }
+    methods.forEach(aMethod => {
+      describe('#Array.prototype.' + aMethod, function() {
+        it('should be polyfilled', function() {
+          expect(Array.prototype[aMethod]).to.exist;
+          expect(Array.prototype[aMethod]).to.be.a('function');
+        });
+
+      testCases.forEach(aCase => {
+        it('should ' + aCase.description, function() {
+          expect(aCase.input[aMethod](aCase.predicate)).
+            to.be.equals(aCase.input['real_' + aMethod](aCase.predicate));
+        });
+      });
+
+      it('should fail when predicate is not a function', function(done) {
+        try {
+          Array.prototype[aMethod].apply([], null);
+        } catch(ex) {
+          expect(ex).to.exist;
+          done();
+        }
+      });
+
+      it('should fail when called on null', function(done) {
+        try {
+          Array.prototype[aMethod].apply(null, function() {});
+        } catch(ex) {
+          expect(ex).to.exist;
+          done();
+        }
+      });
+
+      it('should fail when called on undefined', function(done) {
+        try {
+          Array.prototype[aMethod].apply(undefined, function() {});
+        } catch(ex) {
+          expect(ex).to.exist;
+          done();
+        }
+      });
     });
+    });
+  
   });
 
   describe('#window.Intl', function() {
