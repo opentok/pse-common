@@ -2,6 +2,25 @@
 
   'use strict';
 
+  var cachedCssRules = null;
+  function getCssRules(useCache) {
+    if (cachedCssRules && useCache) {
+      return cachedCssRules;
+    }
+    var rules = { };
+    var ds = document.styleSheets;
+    var dsl = ds.length;
+    for (var i = 0; i < dsl; ++i) {
+      var dsi = ds[i].cssRules;
+      var dsil = dsi && dsi.length || 0;
+      for (var j = 0;j < dsil; ++j) {
+        rules[dsi[j].selectorText] = dsi[j];
+      }
+    }
+    cachedCssRules = rules;
+    return rules;
+  }
+
   var getCurrentTime = function() {
     var now = new Date();
     var time = [];
@@ -312,7 +331,8 @@
     isIE: isIE,
     getPathname: function() {
       return document.location.pathname;
-    }
+    },
+    getCssRules: getCssRules
   };
 
   // Just replacing global.utils might not be safe... let's just expand it...
