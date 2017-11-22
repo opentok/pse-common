@@ -11,9 +11,10 @@
                      function(e) { return e };
   })();
 
-  var DragDetector = function(element) {
+  var DragDetector = function(element, isResizable) {
     this.element = element;
     this.timer = null;
+    this.isResizable = isResizable;
     element.addEventListener(touchstart, this);
   };
 
@@ -60,6 +61,11 @@
     handleEvent: function(evt) {
       switch (evt.type) {
         case touchstart:
+          if (this.isResizable && evt.target === this.element) {
+            // We won't consume events while resizing
+            return;
+          }
+
           var touch = getTouch(evt);
           this.startX = touch.pageX;
           this.startY = touch.pageY;
@@ -93,7 +99,7 @@
     }
   };
 
-  var DraggableElement = function(element) {
+  var DraggableElement = function(element, isResizable) {
     this.element = element;
     this.elementStyle = element.style;
 
@@ -101,7 +107,7 @@
     this.translatedY = parseInt(element.data('translatedY') || '0', 10);
     this.translate();
 
-    this.detector = new DragDetector(element);
+    this.detector = new DragDetector(element, isResizable);
     element.addEventListener('DragDetector:dragstart', this);
   };
 
@@ -165,8 +171,9 @@
   var elements = {};
 
   var Draggable = {
-    on: function(element) {
-      element && !elements[element] && (elements[element] = new DraggableElement(element));
+    on: function(element, isResizable) {
+      element && !elements[element] && (elements[element] = new DraggableElement(element,
+        isResizable));
     },
 
     off: function(element) {
