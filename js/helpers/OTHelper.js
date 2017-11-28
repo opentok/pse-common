@@ -497,14 +497,14 @@
     const destroyPublisherV2 = id => publishers[id] && (publishers[id].destroy() || true);
 
     function togglePublisherPropertyV2(id, aProperty, aValue) {
-      publisherReady().then(function(aPublisher) {
-        aPublisher['publish' + aProperty](aValue);
+      publisherReadyV2(id).then(function(aPublisherId) {
+        publishers[aPublisherId]['publish' + aProperty](aValue);
       });
     }
 
     const togglePublisherVideoV2 = (id, aValue) => togglePublisherPropertyV2(id, 'Video', aValue);
 
-    const togglePublisherAudioV2 = (id, aValue) => togglePublisherProperty(id, 'Audio', aValue);
+    const togglePublisherAudioV2 = (id, aValue) => togglePublisherPropertyV2(id, 'Audio', aValue);
 
     /*
     * End of the V2 publishing methods...
