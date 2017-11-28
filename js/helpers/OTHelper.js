@@ -22,7 +22,7 @@
   }
 
   const MSG_MULTIPART = 'signal';
-  const SIZE_MAX = 7800;
+  const SIZE_MAX = 8000;
 
   const HEAD_SIZE =
         JSON.stringify({ _head: { id: 99, seq: 99, tot: 99 }, data: '' }).length;
@@ -87,30 +87,49 @@
 
   const sendSignal = (() => {
     let messageOrder = 0;
-    function composeSegment(aMsgId, aSegmentOrder, aTotalSegments, aUsrMsg) {
-      const obj = {
-        type: aUsrMsg.type,
-        data: JSON.stringify({
+
+    //
+    // Multipart message sending proccess. this is expected to be the actual session
+    //
+
+    const sendSignalFn = function(aType, aMsgData, aTo) {
+      let currentPosition = 0;
+
+      function composeSegment(aMsgId, aSegmentOrder, aTotalSegments, aUsrMsg) {
+        const signalData = {
           _head: {
             id: aMsgId,
             seq: aSegmentOrder,
             tot: aTotalSegments,
           },
           data: aUsrMsg.data ?
-            aUsrMsg.data.substr(aSegmentOrder * USER_DATA_SIZE, USER_DATA_SIZE) :
+            aUsrMsg.data.substr(currentPosition, USER_DATA_SIZE) :
             '',
-        }),
-      };
-      if (aUsrMsg.to) {
-        obj.to = aUsrMsg.to;
-      }
-      return obj;
-    }
+        };
 
-    //
-    // Multipart message sending proccess. this is expected to be the actual session
-    //
-    const sendSignalFn = function(aType, aMsgData, aTo) {
+        let signalContent = JSON.stringify(signalData);
+
+        const overflow = JSON.stringify(signalContent).length - SIZE_MAX;
+        if (overflow > 0) {
+          signalData.data = aUsrMsg.data.substr(currentPosition, USER_DATA_SIZE - overflow);
+          signalContent = JSON.stringify(signalData);
+          currentPosition += USER_DATA_SIZE - overflow;
+        } else {
+          currentPosition += USER_DATA_SIZE;
+        }
+
+        const obj = {
+          type: aUsrMsg.type,
+          data: signalContent,
+        };
+
+        if (aUsrMsg.to) {
+          obj.to = aUsrMsg.to;
+        }
+
+        return obj;
+      }
+
       const session = this;
       return new Promise((resolve, reject) => {
         const msg = {
@@ -118,7 +137,7 @@
           data: aMsgData && JSON.stringify(aMsgData),
         };
         const msgId = ++messageOrder;
-        const totalSegments = msg.data ? Math.ceil(msg.data.length / USER_DATA_SIZE) : 1;
+        const totalSegments = msg.data ? Math.ceil(JSON.stringify(msg.data).length / USER_DATA_SIZE) : 1;
         const messagesSent = [];
         for (let segmentOrder = 0; segmentOrder < totalSegments; segmentOrder++) {
           const signalData = composeSegment(msgId, segmentOrder, totalSegments, msg);
