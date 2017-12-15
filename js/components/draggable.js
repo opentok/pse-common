@@ -168,19 +168,19 @@
     }
   };
 
-  var elements = {};
+  var elements = new Map();
 
   var Draggable = {
     on: function(element, isResizable) {
-      element && !elements[element] && (elements[element] = new DraggableElement(element,
-        isResizable));
+      element && !elements.has(element) && (elements.set(element, new DraggableElement(element,
+        isResizable)));
     },
 
     off: function(element) {
-      var draggableElement = elements[element];
+      var draggableElement = elements.get(element);
       if (draggableElement) {
         draggableElement.destroy();
-        elements[element] = null;
+        elements.delete(element);
       }
     },
 
