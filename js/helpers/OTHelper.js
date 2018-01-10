@@ -27,14 +27,16 @@
   const HEAD_SIZE =
         JSON.stringify({ _head: { id: 99, seq: 99, tot: 99 }, data: '' }).length;
   const USER_DATA_SIZE = SIZE_MAX - HEAD_SIZE;
-  const logger =
-        new Utils.MultiLevelLogger('OTHelper.js', Utils.MultiLevelLogger.DEFAULT_LEVELS.all);
+  const LOG_LEVEL = global.LOG_LEVEL !== undefined ?
+    global.LOG_LEVEL :
+    Utils.MultiLevelLogger.DEFAULT_LEVELS.all;
+  const logger = new Utils.MultiLevelLogger('OTHelper.js', LOG_LEVEL);
 
   const OTAsPromised = {};
 
   const otLoaded = otPromise.then(() => {
     const hasRequirements = OT.checkSystemRequirements();
-    logger.log('checkSystemRequirements:', hasRequirements);
+    logger.trace('checkSystemRequirements:', hasRequirements);
     if (!hasRequirements) {
       OT.upgradeSystemRequirements();
       throw new Error('Unsupported browser, probably needs upgrade');
@@ -137,7 +139,8 @@
           data: aMsgData && JSON.stringify(aMsgData),
         };
         const msgId = ++messageOrder;
-        const totalSegments = msg.data ? Math.ceil(JSON.stringify(msg.data).length / USER_DATA_SIZE) : 1;
+        const totalSegments =
+          msg.data ? Math.ceil(JSON.stringify(msg.data).length / USER_DATA_SIZE) : 1;
         const messagesSent = [];
         for (let segmentOrder = 0; segmentOrder < totalSegments; segmentOrder++) {
           const signalData = composeSegment(msgId, segmentOrder, totalSegments, msg);
@@ -566,20 +569,26 @@
       aPubSub._ANNOTATION_PACK = aAccPack;
     }
 
+    let maxConcurrentSubs = 0;
+    let runningSubs = 0;
+    const pendingSubs = [];
+
     function subscribe(aStream, aTargetElement, aProperties, aHandlers, aEnableAnnotation) {
+      if (maxConcurrentSubs && runningSubs >= maxConcurrentSubs) {
+        logger.trace(
+          'Subscribe: Delayed subscription to: ', aStream, maxConcurrentSubs, runningSubs,
+          pendingSubs.length
+        );
+        return new Promise(solver => pendingSubs.push(solver)).
+          then(() => subscribe(aStream, aTargetElement, aProperties, aHandlers));
+      }
+      runningSubs++;
       const self = this; /* jshint ignore: line */
       return new Promise(function(resolve, reject) {
         const subscriber =
           _session.subscribe(aStream, aTargetElement, aProperties, function(error) {
             error ? reject(error) : resolve(subscriber);
           });
-      }).then(function(subscriber) {
-        try {
-          aProperties.restrictFrameRate &&
-            subscriber.restrictFrameRate(aProperties.restrictFrameRate);
-        } catch (ex) {
-          logger.log('Failed calling restrictFrameRate', ex);
-        }
         Object.keys(aHandlers).forEach(function(name) {
           subscriber.on(name, aHandlers[name].bind(self));
         });
@@ -587,6 +596,21 @@
           subscriber.off();
           endAnnotation(subscriber);
         });
+      }).then(function(subscriber) {
+        runningSubs--;
+        if (pendingSubs.length > 0 && (!maxConcurrentSubs || runningSubs < maxConcurrentSubs)) {
+          logger.trace(
+            'Subscribe: Launching delayed subscription:', maxConcurrentSubs, runningSubs,
+            pendingSubs.length
+          );
+          (pendingSubs.pop())();
+        }
+        try {
+          aProperties.restrictFrameRate &&
+            subscriber.restrictFrameRate(aProperties.restrictFrameRate);
+        } catch (ex) {
+          logger.warn('Failed calling restrictFrameRate', ex);
+        }
         const subsAnnotation =
           (aEnableAnnotation && aStream.videoType === 'screen' && getAnnotation(aTargetElement)) ||
           null;
@@ -668,6 +692,12 @@
       off,
       publish,
       destroyPublisher,
+      get maxConcurrentSubscriptions() {
+        return maxConcurrentSubs;
+      },
+      set maxConcurrentSubscriptions(v) {
+        maxConcurrentSubs = parseInt(v, 10) || 0;
+      },
       subscribe,
       toggleSubscribersAudio,
       toggleSubscribersVideo,
