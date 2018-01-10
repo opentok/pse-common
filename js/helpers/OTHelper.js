@@ -603,7 +603,7 @@
             'Subscribe: Launching delayed subscription:', maxConcurrentSubs, runningSubs,
             pendingSubs.length
           );
-          (pendingSubs.pop())();
+          (pendingSubs.shift())();
         }
         try {
           aProperties.restrictFrameRate &&
