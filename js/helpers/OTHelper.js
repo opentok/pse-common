@@ -21,6 +21,12 @@
     otPromise = LazyLoader.load(preReqSources);
   }
 
+  const toB64 = global.atob;
+  const fromB64 = global.btoa;
+  const compressor = global.LZString;
+  const compress = compressor && compressor.compressToBase64.bind(compressor) || toB64;
+  const uncompress = compressor && compressor.decompressFromBase64.bind(compressor) || fromB64;
+
   const MSG_MULTIPART = 'signal';
   const SIZE_MAX = 8000;
 
@@ -136,11 +142,16 @@
       return new Promise((resolve, reject) => {
         const msg = {
           type: aType,
-          data: aMsgData && JSON.stringify(aMsgData),
+          data: compress(aMsgData && JSON.stringify(aMsgData) || ''),
         };
         const msgId = ++messageOrder;
-        const totalSegments =
-          msg.data ? Math.ceil(JSON.stringify(msg.data).length / USER_DATA_SIZE) : 1;
+        const dataSize = msg.data.length + 2;
+        let totalSegments =
+          msg.data ? Math.ceil(dataSize / USER_DATA_SIZE) : 1;
+        totalSegments = Math.max(
+          Math.ceil((dataSize + (HEAD_SIZE + 2) * totalSegments) / USER_DATA_SIZE),
+          totalSegments);
+
         const messagesSent = [];
         for (let segmentOrder = 0; segmentOrder < totalSegments; segmentOrder++) {
           const signalData = composeSegment(msgId, segmentOrder, totalSegments, msg);
@@ -227,7 +238,7 @@
       }
       // If we have completed the message, fulfill the promise
       if (msg.have >= parsedMsg.head.tot) {
-        aEvt.data = msg.data.join('');
+        aEvt.data = uncompress(msg.data.join(''));
         msg.promiseSolver(aEvt);
         delete connection[parsedMsg.head.id];
       }
