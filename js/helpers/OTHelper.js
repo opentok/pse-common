@@ -608,6 +608,8 @@
           endAnnotation(subscriber);
         });
       }).then(function(subscriber) {
+        aTargetElement.dataset.videoDimensions = JSON.stringify(aStream.videoDimensions);
+        aTargetElement.dataset.videoType = aStream.videoType;
         runningSubs--;
         if (pendingSubs.length > 0 && (!maxConcurrentSubs || runningSubs < maxConcurrentSubs)) {
           logger.trace(
@@ -661,14 +663,17 @@
                   _session.publish(_screenShare, function(err) {
                     if (err) {
                       endAnnotation(annotationAccPack);
-                      reject({
+                      return reject({
                         code: PUB_SCREEN_ERROR_CODES.errPublishingScreen,
                         message: err.message,
                       });
-                    } else {
-                      setupAnnotation(annotationAccPack, _screenShare, aDOMElement);
-                      resolve(_screenShare);
                     }
+                    aDOMElement.dataset.videoDimensions =
+                      JSON.stringify(_screenShare.stream.videoDimensions);
+                    aDOMElement.dataset.videoType =
+                      _screenShare.stream.videoType;
+                    setupAnnotation(annotationAccPack, _screenShare, aDOMElement);
+                    resolve(_screenShare);
                   });
                 }
               });
