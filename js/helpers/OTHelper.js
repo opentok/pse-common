@@ -604,6 +604,8 @@
           subscriber.on(name, aHandlers[name].bind(self));
         });
         subscriber.on('destroyed', function() {
+          aTargetElement.dataset.videoDimensions = undefined;
+          aTargetElement.dataset.videoType = undefined;
           subscriber.off();
           endAnnotation(subscriber);
         });
@@ -655,27 +657,29 @@
           const annotationAccPack = aEnableAnnotation && getAnnotation(aDOMElement);
           startAnnotation(annotationAccPack).
             then(function() {
-              _screenShare = OT.initPublisher(aDOMElement, aProperties, function(error) {
+              _screenShare = OT.initPublisher(aDOMElement, aProperties, (error) => {
                 if (error) {
                   endAnnotation(annotationAccPack);
-                  reject(error);
-                } else {
-                  _session.publish(_screenShare, function(err) {
-                    if (err) {
-                      endAnnotation(annotationAccPack);
-                      return reject({
-                        code: PUB_SCREEN_ERROR_CODES.errPublishingScreen,
-                        message: err.message,
-                      });
-                    }
-                    aDOMElement.dataset.videoDimensions =
-                      JSON.stringify(_screenShare.stream.videoDimensions);
-                    aDOMElement.dataset.videoType =
-                      _screenShare.stream.videoType;
-                    setupAnnotation(annotationAccPack, _screenShare, aDOMElement);
-                    resolve(_screenShare);
-                  });
+                  return reject(error);
                 }
+                return _session.publish(_screenShare, (err) => {
+                  if (err) {
+                    endAnnotation(annotationAccPack);
+                    return reject({
+                      code: PUB_SCREEN_ERROR_CODES.errPublishingScreen,
+                      message: err.message,
+                    });
+                  }
+                  const { videoDimensions, videoType } = _screenShare.stream;
+                  aDOMElement.dataset.videoDimensions = JSON.stringify(videoDimensions);
+                  aDOMElement.dataset.videoType = videoType;
+                  setupAnnotation(annotationAccPack, _screenShare, aDOMElement);
+                  _screenShare.on('streamDestroyed', () => {
+                    aDOMElement.dataset.videoType = undefined;
+                    aDOMElement.dataset.videoDimensions = undefined;
+                  });
+                  return resolve(_screenShare);
+                });
               });
               aHandlers && _setHandlers(self, _screenShare, aHandlers);
             });
