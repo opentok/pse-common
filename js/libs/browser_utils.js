@@ -68,6 +68,11 @@
   var addEventsHandlers = function(eventPreffixName, handlers, target) {
     eventPreffixName = eventPreffixName || '';
     Object.keys(handlers).forEach(function(eventName) {
+      // Suspicious...
+      (eventName === 'undefined' || eventName === 'null') &&
+        console.error(
+          new Error('Undefined or null eventName: ' + eventName + '. PN:' + eventPreffixName));
+
       (target || exports).addEventListener(eventPreffixName + eventName, handlers[eventName]);
     });
   };
