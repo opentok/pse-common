@@ -508,7 +508,8 @@
     }
 
     // And this one destroys the publisher
-    const destroyPublisherV2 = id => publishers[id] && (publishers[id].destroy() || true);
+    const destroyPublisherV2 =
+      id => publishers[id] && (publishers[id].destroy() || (publishers[id] = null) || true);
 
     function togglePublisherPropertyV2(id, aProperty, aValue) {
       publisherReadyV2(id).then(function(aPublisherId) {
@@ -704,6 +705,55 @@
       aSubscriber.setPreferredResolution(newDimension);
     }
 
+    function getStream(type, domElem) {
+      let stream;
+      if (domElem.captureStream) {
+        stream = domElem.captureStream();
+      } else if (domElem.mozCaptureStream) {
+        stream = domElem.mozCaptureStream();
+      } else {
+        return null;
+      }
+
+      let tracks;
+      switch (type) {
+        case 'Audio':
+          tracks = stream.getAudioTracks();
+          break;
+        case 'Video':
+          tracks = stream.getVideoTracks();
+          break;
+        default:
+          tracks = null;
+      }
+      return tracks && tracks.length > 0 && tracks[0] || null;
+    }
+
+    function getVideoStream(elem) {
+      return getStream('Video', elem);
+    }
+
+    function getAudioStream(elem) {
+      return getStream('Audio', elem);
+    }
+
+    function initMediaStreamPublisher(sourceElem, dstElem, aProperties, aHandlers) {
+      const videoStream = getVideoStream(sourceElem);
+      const audioStream = getAudioStream(sourceElem);
+      const properties = Object.assign({}, aProperties);
+
+      if (!videoStream && !audioStream) {
+        logger.trace('Nothing to publish');
+        return null;
+      }
+
+      videoStream && (properties.videoSource = videoStream) || (properties.publishVideo = false);
+      audioStream && (properties.audioSource = audioStream) || (properties.publishAudio = false);
+
+      const pubId = initPublisherV2(dstElem, properties, aHandlers);
+      return pubId;
+    }
+
     return {
       get session() {
         return _session;
@@ -775,6 +825,7 @@
       publisherReadyV2,
       togglePublisherVideoV2,
       togglePublisherAudioV2,
+      initMediaStreamPublisher,
     };
   }
 
