@@ -1,2 +1,2 @@
 # pse-common
-Common resources PSE
+Common resources the PSE Team
