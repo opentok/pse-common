@@ -601,6 +601,7 @@
           _session.subscribe(aStream, aTargetElement, aProperties, function(error) {
             error ? reject(error) : resolve(subscriber);
           });
+      }).then(function(subscriber) {
         Object.keys(aHandlers).forEach(function(name) {
           subscriber.on(name, aHandlers[name].bind(self));
         });
@@ -610,7 +611,7 @@
           subscriber.off();
           endAnnotation(subscriber);
         });
-      }).then(function(subscriber) {
+
         aTargetElement.dataset.videoDimensions = JSON.stringify(aStream.videoDimensions);
         aTargetElement.dataset.videoType = aStream.videoType;
         runningSubs--;
