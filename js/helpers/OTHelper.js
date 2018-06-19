@@ -1,4 +1,4 @@
-/* globals LazyLoader, Utils, OT, AnnotationAccPack */
+/* globals LazyLoader, Utils, OT, AnnotationAccPack, window */
 /* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable prefer-arrow-callback */
@@ -738,9 +738,41 @@
       return getStream('Audio', elem);
     }
 
+    /**
+     * OPENTOK-37378 Chrome has problems getting the audio from some videos with
+     * HTMLMediaElement.captureStream()
+     *
+     * This is a workaround to get the audio from the element using the Web Audio API
+     */
+    function getAudioTrackUsingWebAudio(elem) {
+      // Store the web audio objects in a element property
+      let webAudio = elem.webAudio; // eslint-disable-line
+      if (!webAudio) {
+        webAudio = {
+          context: new (window.AudioContext || window.webkitAudioContext)(),
+        };
+        elem.webAudio = webAudio;
+        webAudio.sourceNode = webAudio.context.createMediaElementSource(elem);
+        // To hear the video locally, we need to send the audio also to the local speakers
+        webAudio.sourceNode.connect(webAudio.context.destination);
+      } else {
+        // Disconnect the previous node
+        webAudio.mediaStreamNode.disconnect();
+      }
+      // We need to recreate the media stream node because it can be inactive
+      webAudio.mediaStreamNode = webAudio.context.createMediaStreamDestination()
+      webAudio.sourceNode.connect(webAudio.mediaStreamNode);
+
+      const audioTracks = webAudio.mediaStreamNode.stream.getAudioTracks();
+      return audioTracks && audioTracks.length > 0 && audioTracks[0] || null;
+    }
+
     function initMediaStreamPublisher(sourceElem, dstElem, aProperties, aHandlers) {
       const videoStream = getVideoStream(sourceElem);
-      const audioStream = getAudioStream(sourceElem);
+      const audioStream = window.chrome ?
+        getAudioTrackUsingWebAudio(sourceElem) :
+        getAudioStream(sourceElem);
+
       const properties = Object.assign({}, aProperties);
 
       if (!videoStream && !audioStream) {
