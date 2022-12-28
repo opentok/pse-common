@@ -22,7 +22,7 @@
   "homepage": "https://github.com/opentok/pse-common#readme",
   "dependencies": {
     "bower": "^1.6.5",
-    "grunt": "~0.4.5",
+    "grunt": "~1.0.3",
     "grunt-bower-task": "^0.4.0",
     "grunt-karma": "^0.12.1",
     "swagger-boilerplate": "^0.0.9"
